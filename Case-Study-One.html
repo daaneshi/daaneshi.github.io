@@ -277,7 +277,7 @@ $(document).ready(function () {
   <a href="index.html">Home</a>
 </li>
 <li>
-  <a href="CLT_2.html">CLT</a>
+  <a href="Case-Study-One.html">Case Study One</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -300,49 +300,21 @@ $(document).ready(function () {
 
 <p>After carefully reviewing the beer and brewery data provided by your company, our group was able to discover what we think is helpful information in choosing which beer type to offer within specific US states. In our analysis we primarily reviewed the alcohol by volume (ABV) and international bitterness unit (IBU) for each beer type within each state. In part of our research we were able to find that if your company wanted to offer a more bitter beer (higher IBU), Maine should be considered as the first state to introduce it since the it has the highest median IBU value in the US. In addition, if you instead wanted to release a lighter beer, Utah would probably be the best place to introduce this product since their median alcohol by volume (ABV) is the lowest in the US.</p>
 <p>Below you can find our analysis regarding the beer &amp; brewery data provided.</p>
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## -- Attaching packages --------------- tidyverse 1.2.1 --</code></pre>
-<pre><code>## v ggplot2 3.2.1     v purrr   0.3.3
-## v tibble  2.1.3     v dplyr   0.8.3
-## v tidyr   1.0.0     v stringr 1.4.0
-## v readr   1.3.1     v forcats 0.4.0</code></pre>
-<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 3.6.2</code></pre>
-<pre><code>## -- Conflicts ------------------ tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code>library(ggplot2)
-library(reshape2)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;reshape2&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:tidyr&#39;:
-## 
-##     smiths</code></pre>
-<pre class="r"><code>library(dplyr)
-library(na.tools)</code></pre>
-<pre><code>## Warning: package &#39;na.tools&#39; was built under R version 3.6.2</code></pre>
-<pre class="r"><code>library(sqldf)</code></pre>
-<pre><code>## Loading required package: gsubfn</code></pre>
-<pre><code>## Loading required package: proto</code></pre>
-<pre><code>## Loading required package: RSQLite</code></pre>
-<pre class="r"><code>library(RCurl)</code></pre>
-<pre><code>## Loading required package: bitops</code></pre>
-<pre><code>## 
-## Attaching package: &#39;RCurl&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:tidyr&#39;:
-## 
-##     complete</code></pre>
-<pre class="r"><code>library(e1071)
+<pre class="r"><code>library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(na.tools)
+library(sqldf)
+library(RCurl)
+library(e1071)
 library(class)
-library(caret)</code></pre>
-<pre><code>## Loading required package: lattice</code></pre>
-<pre><code>## 
-## Attaching package: &#39;caret&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:purrr&#39;:
-## 
-##     lift</code></pre>
-<pre class="r"><code>library(usmap)</code></pre>
-<pre><code>## Warning: package &#39;usmap&#39; was built under R version 3.6.2</code></pre>
-<pre class="r"><code>#Set working directory
+library(caret)
+library(usmap)
+
+
+
+#Set working directory
 setwd(&quot;C:/Users/e005108/Documents/DS/DataScience/MDS-6306-Doing-Data-Science-Fall-2019-Master/Unit 8 and 9 Case Study 1&quot;)
 
 # Read CSV into R
@@ -538,7 +510,8 @@ beersAndPubs &lt;- beersAndPubs %&gt;% mutate(IBU = na.median(IBU)) %&gt;% data.
 medianABVbyState &lt;- beersAndPubs %&gt;% group_by(State) %&gt;% summarise(ABV = median(ABV)) %&gt;% data.frame()
 medianABVbyState &lt;- data.frame(medianABVbyState[order(-medianABVbyState$ABV),])
 medianIBUbyState &lt;- beersAndPubs %&gt;% group_by(State) %&gt;% summarise(IBU = median(IBU)) %&gt;% data.frame()
-medianIBUbyState &lt;- data.frame(medianIBUbyState[order(-medianIBUbyState$IBU),])</code></pre>
+medianIBUbyState &lt;- 
+data.frame(medianIBUbyState[order(-medianIBUbyState$IBU),])</code></pre>
 </div>
 <div id="compute-the-median-alcohol-content-and-international-bitterness-unit-for-each-state.-plot-a-bar-chart-to-compare." class="section level4">
 <h4>4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.</h4>
