@@ -1,0 +1,42 @@
+---
+title: "About Me"
+author: "Daanesh"
+date: "2/12/2020"
+output: html_document
+---
+```{r echo=FALSE, out.width='30%'}
+knitr::include_graphics("C:/Users/e005108/Downloads/IMG-0341.JPG")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Daanesh Ibrahim
+## Residence:
+### Dallas, TX
+##
+## Interests:
+### Basketball, Dallas Mavericks, Star Wars
+##
+## Employment:
+### Health Management Systems
+##
+## Education:
+### Emory Universiry
+##
+##
+#### The other tabs represent work/analysis I have completed. Please check it out!
+

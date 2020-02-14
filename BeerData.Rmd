@@ -1,0 +1,348 @@
+---
+title: "Case Study Website"
+author: "Daanesh"
+date: "2/12/2020"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo = FALSE}
+library(rsconnect)
+library(shiny)
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(na.tools)
+library(sqldf)
+library(RCurl)
+library(e1071)
+library(class)
+library(caret)
+library(usmap)
+library(plotly)
+
+
+
+
+
+
+
+beerData <- read.csv(file="Beers.csv", header=TRUE, sep=",")
+
+
+breweryData <- read.csv(file="Breweries.csv", header=TRUE, sep=",")
+
+beersAndPubs <- merge(beerData,breweryData, by.x = "Brewery_id", by.y = "Brew_ID", all.x = TRUE)
+
+names(beersAndPubs) <- c("Brewery_ID","Beer_Name","Beer_ID","ABV","IBU","Style","Ounces","Brewery_Name","City","State")
+
+beersAndPubs$State <- trimws(beersAndPubs$State)
+
+
+beersAndPubs1 <- beersAndPubs
+
+
+
+IBUbeersAndPubs = beersAndPubs %>% select(IBU,State)
+
+ABVbeersAndPubs = beersAndPubs %>%
+select(ABV,State)
+
+IBUABVbeersAndPubs = beersAndPubs %>%
+select(IBU,ABV,State)
+
+
+
+
+
+
+na_count <-sapply(beersAndPubs1, 
+                  function(cnt) sum(length(which(is.na(cnt)))))
+percentNA <- ((na_count/(nrow(beersAndPubs1)))*100)
+percentNA <- paste0(round(percentNA, digits = 1),"%")
+percentCountNA <- paste(na_count," (",percentNA,")",sep="")
+na_df <- data.frame(na_count)
+na_df$categories <- c("Brewery_ID","Beer_Name","Beer_ID","ABV","IBU","Style","Ounces","Brewery_Name","City","State")
+
+#plot the count data
+nacount <- ggplot(data=na_df, aes(x=categories, y=na_count)) + 
+  geom_bar(stat="identity", fill="tomato3") +
+  ggtitle("Count of NAs per Category") +
+  coord_flip() + 
+  geom_text(
+            data = na_df, 
+            aes(y = na_count, 
+                label = percentCountNA
+                ), 
+            size = 4,
+            vjust = .35, hjust=-.01) +
+  ylim(0,1300) +
+  theme(
+        panel.background = element_rect(fill = 'gray95'),
+        axis.text.y = element_text(size=10),
+        axis.text.x = element_text(size=12),
+        axis.title.x = element_text(vjust=-0.35, size=13),
+        axis.title.y = element_text(vjust=0.35, hjust=0.57, size=13),
+        plot.title = element_text(hjust = 0.5, size=20)
+        ) +
+  ylab("Count") +
+  xlab("Categories")
+
+
+
+
+ui <- fluidPage(
+  
+  # App title ----
+  tabsetPanel(
+  
+ # Generate a row with a sidebar
+  tabPanel("IBU", fluid = TRUE,
+    sidebarLayout(      
+    
+    # Define the sidebar with one input
+    sidebarPanel(selectInput("state1","Choose a state:",
+    c("All States",unique(as.character(beersAndPubs$State)))),
+    radioButtons("pType", "Plot Type:",
+                    list("hgrm", "bxplt"))),
+   mainPanel(plotOutput("IBUPlot")
+    ),position = "left",fluid = TRUE
+    )
+    ),
+ 
+  tabPanel("ABV", fluid = TRUE,
+    sidebarLayout(      
+    
+    # Define the sidebar with one input
+    sidebarPanel(selectInput("state2","Choose a state:",
+    c("All States",unique(as.character(beersAndPubs$State)))),
+    radioButtons("pType2", "Plot Type:",
+                    list("hgrm", "bxplt"))),
+    mainPanel(
+      plotOutput("ABVPlot")
+    ),position = "left",fluid = TRUE
+    )
+    ),
+    
+ tabPanel("Scatter", fluid = TRUE,
+    sidebarLayout(      
+    
+    # Define the sidebar with one input
+     sidebarPanel(selectInput("state3","Choose a state:",
+    c("All States",unique(as.character(beersAndPubs$State)))),
+    radioButtons("lType", "Regression Line:",
+                    list("noline", "withline"))),
+    mainPanel(
+      plotOutput("ScatterPlot")
+    ),position = "left",fluid = TRUE
+    )
+    ),
+ 
+ tabPanel("NA_Count", fluid = TRUE,
+    sidebarLayout(  
+      sidebarPanel(selectInput("state4","Choose a state:",
+    c("All States",unique(as.character(beersAndPubs$State))))),
+    mainPanel(
+      plotOutput("NA_CountPlot")
+    ),position = "left",fluid = TRUE
+    )
+    )))
+ 
+    # Create a spot for the barplot
+   
+
+
+# Define server logic required to draw a histogram ----
+server <- function(input, output) {
+  
+  # Histogram of the Old Faithful Geyser Data ----
+  # with requested number of bins
+  # This expression that generates a histogram is wrapped in a call
+  # to renderPlot to indicate that:
+  #
+  # 1. It is "reactive" and therefore should be automatically
+  #    re-executed when inputs (input$bins) change
+  # 2. Its output type is a plot
+  output$IBUPlot <- renderPlot({
+    IBUbeersAndPubs1 = IBUbeersAndPubs
+    # Render a barplot
+    if (input$state1 != "All States") {
+      IBUbeersAndPubs1 <- IBUbeersAndPubs %>% filter(IBUbeersAndPubs$State == input$state1)
+    }
+     if (input$pType =="hgrm") {
+    ggplot(data=IBUbeersAndPubs1, aes(IBUbeersAndPubs1$IBU)) + 
+  geom_histogram(col="red", 
+                 fill="green",alpha=.2)+ 
+  ggtitle(paste("IBU Histogram for ",input$state1)) +
+  xlab("IBU") +
+  ylab("Frequency") +
+  theme(plot.title = element_text(hjust = 0.5, size=20),
+        panel.background = element_rect(fill = 'ivory1'),
+        axis.text.y = element_text(size=13),
+        axis.text.x = element_text(size=13),
+        axis.title.x = element_text(color="forestgreen", vjust=-0.35, size=15),
+        axis.title.y = element_text(color="forestgreen" , vjust=0.35, size=15))}
+    else {
+    ggplot(data=IBUbeersAndPubs1, aes(y=IBUbeersAndPubs1$IBU)) + 
+  geom_boxplot(stat="boxplot", fill="green", color="red",alpha=.2) + 
+  theme(
+        panel.background = element_rect(fill = 'ivory1'),
+        plot.title = element_text(hjust = 0.5, size=20),
+        axis.text.y = element_text(size=13),
+        axis.text.x = element_text(size=13),
+        axis.title.x = element_text(color="forestgreen", vjust=-0.35, size=15),
+        axis.title.y = element_text(color="forestgreen" , vjust=0.35, size=15)
+        ) + 
+  ggtitle(paste("Boxplot IBU for ",input$state1)) + 
+  xlab(input$state1)+
+        ylab("IBU")
+      
+    }
+    
+  })
+  
+  
+  
+  output$ABVPlot <- renderPlot({
+    ABVbeersAndPubs1 <- ABVbeersAndPubs
+    if (input$state2 != "All States") {
+      ABVbeersAndPubs1 <- ABVbeersAndPubs %>% filter(ABVbeersAndPubs$State == input$state2)
+    }
+    # Render a barplot
+    if (input$pType2 == "hgrm") {
+    ggplot(data=ABVbeersAndPubs1, aes(ABVbeersAndPubs1$ABV)) + 
+  geom_histogram(col="red", 
+                 fill="blue",alpha=.2)+ 
+  ggtitle(paste("ABV Histogram for ",input$state2)) +
+  xlab("ABV") +
+  ylab("Frequency") +
+  theme(plot.title = element_text(hjust = 0.5, size=20),
+        panel.background = element_rect(fill = 'ivory1'),
+        axis.text.y = element_text(size=13),
+        axis.text.x = element_text(size=13),
+        axis.title.x = element_text(color="blue", vjust=-0.35, size=15),
+        axis.title.y = element_text(color="blue" , vjust=0.35, size=15))}
+    else {
+    ggplot(data=ABVbeersAndPubs1, aes(y=ABVbeersAndPubs1$ABV)) + 
+  geom_boxplot(stat="boxplot", fill="blue", color="red",alpha=.2) + 
+  theme(
+        panel.background = element_rect(fill = 'ivory1'),
+        plot.title = element_text(hjust = 0.5, size=20),
+        axis.text.y = element_text(size=13),
+        axis.text.x = element_text(size=13),
+        axis.title.x = element_text(color="blue", vjust=-0.35, size=15),
+        axis.title.y = element_text(color="blue" , vjust=0.35, size=15)
+        ) + 
+  ggtitle(paste("Boxplot ABV for ",input$state2)) + 
+  xlab(input$state2)+
+  ylab("ABV")
+      
+    }
+    
+  })
+  
+  output$ScatterPlot <- renderPlot({
+    IBUABVbeersAndPubs1 <- IBUABVbeersAndPubs
+    if (input$state3 != "All States") {
+      IBUABVbeersAndPubs1 <- IBUABVbeersAndPubs %>% filter(IBUABVbeersAndPubs$State == input$state3)
+    }
+    if (input$lType == "withline") {
+      
+    ggplot(IBUABVbeersAndPubs1, aes(x=IBU, y=ABV, fill = IBU)) +
+    geom_point(size=3, shape=21) +
+  xlim(0, 150)+
+  ylim(0.00, 0.13)+
+    geom_smooth(method=lm,color = "red",se=FALSE) +
+  annotate(x=135, y=0.11, 
+         label=paste("R = ", round(cor(IBUABVbeersAndPubs1$IBU, IBUABVbeersAndPubs1$ABV,use = "complete.obs"),3)), 
+         geom="text", size=5, color = "red") +
+  annotate(x=135, y=0.10, 
+         label=paste("R2 = ", round(cor(IBUABVbeersAndPubs1$IBU, IBUABVbeersAndPubs1$ABV,use = "complete.obs") * cor(IBUABVbeersAndPubs1$IBU, IBUABVbeersAndPubs1$ABV,use = "complete.obs"),3)), 
+         geom="text", size=5, color = "red") +
+  theme(
+        panel.background = element_rect(fill = 'ivory1'),
+        plot.title = element_text(hjust = 0.5, size=20),
+        legend.position = "none",
+        axis.text.x = element_text(size=13),
+        axis.text.y = element_text(size=13),
+        axis.title.x = element_text(color="forestgreen", vjust=-0.35, size=15),
+        axis.title.y = element_text(color="cadetblue" , vjust=0.35, size=15)  
+        ) +
+  ggtitle(paste("Total Alcohol by Volume vs. Bitterness Correlation ",input$state3))}
+
+    else {
+ggplot(IBUABVbeersAndPubs1, aes(x=IBU, y=ABV, fill = IBU)) +
+    geom_point(size=3, shape=21) +
+  xlim(0, 150)+
+  ylim(0.00, 0.13)+
+  theme(
+        panel.background = element_rect(fill = 'ivory1'),
+        plot.title = element_text(hjust = 0.5, size=20),
+        legend.position = "none",
+        axis.text.x = element_text(size=13),
+        axis.text.y = element_text(size=13),
+        axis.title.x = element_text(color="forestgreen", vjust=-0.35, size=15),
+        axis.title.y = element_text(color="cadetblue" , vjust=0.35, size=15)  
+        ) +
+ ggtitle(paste("Total Alcohol by Volume vs. Bitterness Correlation ",input$state3))}
+      
+  
+   
+  })
+
+  
+  output$NA_CountPlot <- renderPlot({
+    
+    na_df1 <- na_df
+    if (input$state4 != "All States") {
+      beersAndPubs1 <- beersAndPubs1 %>% filter(beersAndPubs1$State == input$state4)
+      na_count <-sapply(beersAndPubs1, 
+                  function(cnt) sum(length(which(is.na(cnt)))))
+percentNA <- ((na_count/(nrow(beersAndPubs1)))*100)
+percentNA <- paste0(round(percentNA, digits = 1),"%")
+percentCountNA <- paste(na_count," (",percentNA,")",sep="")
+na_df1 <- data.frame(na_count)
+na_df1$categories <- c("Brewery_ID","Beer_Name","Beer_ID","ABV","IBU","Style","Ounces","Brewery_Name","City","State")
+      
+#data.frame(medianIBUbyState[order(-medianIBUbyState$IBU),])
+      
+    }
+    
+    # Render a barplot
+            ggplot(data=na_df1, aes(x=categories, y=na_count)) + 
+  geom_bar(stat="identity", fill="tomato3") +
+  ggtitle(paste("Count of NAs per Category for ",input$state4)) +
+  coord_flip() + 
+  geom_text(
+            data = na_df1, 
+            aes(y = na_count, 
+                label = percentCountNA
+                ), 
+            size = 4,
+            vjust = .35, hjust=-.01) +
+  ylim(0,1300) +
+  theme(
+        panel.background = element_rect(fill = 'gray95'),
+        axis.text.y = element_text(size=10),
+        axis.text.x = element_text(size=12),
+        axis.title.x = element_text(vjust=-0.35, size=13),
+        axis.title.y = element_text(vjust=0.35, hjust=0.57, size=13),
+        plot.title = element_text(hjust = 0.5, size=20)
+        ) +
+  ylab("Count") +
+  xlab("Categories")
+  })
+  
+  
+}
+
+shinyApp(ui, server)
+
+
+
+```
